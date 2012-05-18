@@ -112,7 +112,7 @@ class WordPress_Context extends BehatContext\MinkContext {
     // $current_page->findField('content')->setValue( 'Testing all the things. All the time.' );
 
     // Click the appropriate button depending on the given status
-    $state_button = 'Publish'; 
+    $state_button = 'Save Draft'; 
     switch ($status) {
       case 'draft':
         // We're good.
