@@ -6,10 +6,8 @@ use \Behat\Mink\Behat\Context as BehatContext;
 class WordPress_Context extends BehatContext\MinkContext {
 
   protected $base_url;
-  protected $email_url;
-  protected $driver;
-  protected $session;
   protected $role_map;
+  protected $session;
 
   /**
    * Initializes context.
@@ -20,7 +18,6 @@ class WordPress_Context extends BehatContext\MinkContext {
   public function __construct(array $params) {
     $this->base_url = $params['base_url'];
     $this->role_map = $params['role_map'];
-    $this->email_url = $params['email_url'];
   }
   
   /**
