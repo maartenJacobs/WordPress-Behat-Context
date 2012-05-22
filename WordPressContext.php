@@ -98,7 +98,7 @@ class WordPress_Context extends BehatContext\MinkContext {
    * @param string $status Either 'draft' or anything else for 'publish'
    * @author Maarten Jacobs
    **/
-  protected function fill_in_post($post_type, $post_title, $status = 'publish') {
+  protected function fill_in_post($post_type, $post_title, $status = 'publish', $content = '<p>Testing all the things. All the time.</p>') {
     // The post type, if not post, will be appended.
     // Rather than a separate page per type, this is how WP works with forms for separate post types.
     $uri_suffix = $post_type !== 'post' ? '?post_type=' . $post_type : '';
@@ -107,9 +107,11 @@ class WordPress_Context extends BehatContext\MinkContext {
     $current_page = $session->getPage();
 
     // Fill in the title
-    $current_page->findField('post_title')->setValue( $post_title );
+    $current_page->findField( 'post_title' )->setValue( $post_title );
     // Fill in some nonsencical data for the body
-    // $current_page->findField('content')->setValue( 'Testing all the things. All the time.' );
+    // clickLink and setValue seem to be failing for TinyMCE (same for Cucumber unfortunately)
+    $session->executeScript( 'jQuery( "#content-html" ).click()' );
+    $session->executeScript( 'jQuery( "#content" ).val( ' . $content . ' )' );
 
     // Click the appropriate button depending on the given status
     $state_button = 'Save Draft'; 
@@ -120,6 +122,8 @@ class WordPress_Context extends BehatContext\MinkContext {
       
       case 'publish':
       default:
+        // Save as draft first
+        $current_page->findButton($state_button)->click();
         $state_button = 'Publish';
         break;
     }
@@ -157,6 +161,80 @@ class WordPress_Context extends BehatContext\MinkContext {
 
     // Assert that we are on the dashboard
     assertTrue( $session->getPage()->hasContent('Dashboard') );
+  }
+
+  /**
+   * Given the current page is post list page, we enter the title in the searchbox
+   * and search for that post.
+   *
+   * @param string $post_title The title of the post as it would appear in the WP backend
+   * @param boolean $do_assert If set to anything but false, will assert for the existence of the post title after the search
+   * @return void
+   * @author Maarten Jacobs
+   **/
+  protected function searchForPost( $post_title, $do_assert = FALSE ) {
+    
+    $current_page = $this->getSession()->getPage();
+
+    // Search for the post
+    $search_field = $current_page->findField( 'post-search-input' ); // Searching on #id
+    // When there is no content, then the searchbox is not shown
+    // So we skip search in that case
+    if ($search_field) {
+      $search_field->setValue( $post_title );
+
+      $current_page->findField( 'Search Posts' ) // Searching on value
+                   ->click();
+    }
+    
+    // We don't stop tests even if the searchbox does not exist.
+    // That would prevent the dev from knowing what the hell's going on.
+    // Can I assert all the things?
+    if ( $do_assert ) {
+      assertTrue( $current_page->hasContent($post_title) );
+    }
+
+  }
+
+  /**
+   * @Given /^I trash the "([^"]*)" titled "([^"]*)"$/
+   */
+  public function iTrashThePostTitled( $post_type, $post_title ) {
+    
+    $session = $this->session = $this->getSession();
+
+    // Visit the posts page
+    $uri_suffix = $post_type !== 'post' ? '?post_type=' . $post_type : '';
+    $postlist_uri = 'wp-admin/edit.php' . $uri_suffix;
+    $this->visit( $postlist_uri );
+    $current_page = $session->getPage();
+
+    // Check if the post with that title is on the current page
+    if (!$current_page->hasContent( $post_title )) {
+      // If not, search for the post
+      $this->searchForPost( $post_title );
+    }
+    assertTrue( $current_page->hasContent($post_title) );
+
+    // Select the post in the checkbox column
+    // This is tricky: the checkbox has a non-unique name (of course, that's the way to do it)
+    // So we need to check the box in a different way
+    // The easiest: jQuery
+    $session->executeScript( "jQuery( \"tr:contains('$post_title') :checkbox\" ).click()" ); 
+
+    // Trash it
+    //  - Select the 'Move to Trash' option
+    $current_page->selectFieldOption( 'action', 'Move to Trash' );
+    //  - Click to Apply
+    $current_page->findButton( 'doaction' )->click();
+
+    // Check if the post is no longer visible on the posts page
+    $this->visit( $postlist_uri );
+    assertFalse( $current_page->hasContent( $post_title ) );
+    // Make a search, because it could be on another page
+    $this->searchForPost( $post_title );
+    assertFalse( $current_page->hasContent($post_title) );
+
   }
 
   protected function _visit($path) {
