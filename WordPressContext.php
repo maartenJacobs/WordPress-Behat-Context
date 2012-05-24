@@ -146,15 +146,23 @@ class WordPress_Context extends BehatContext\MinkContext {
     $session = $this->session = $this->getSession();
     $current_page = $session->getPage();
 
+    // Check if logged in as that user
+    $this->visit( 'wp-admin' );
+    if ($current_page->hasContent( "Howdy, {$username}" )) {
+      // We're already logged in as this user.
+      // Double-check
+      assertTrue( $session->getPage()->hasContent('Dashboard') );
+      return true;
+    }
+
+    // Logout
     $this->visit( 'wp-login.php?action=logout' );
     if ($session->getPage()->hasLink('log out')) {
       $current_page->find('css', 'a')->click();
       $current_page = $session->getPage();
     }
 
-    // If the user is not logged in, then the logout action will just show the login form
-    // $this->_visit( 'wp-admin' );
-
+    // And login
     $current_page->fillField('user_login', $username);
     $current_page->fillField('user_pass', $password);
     $current_page->findButton('wp-submit')->click();
