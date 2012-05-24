@@ -33,7 +33,7 @@ class WordPress_Context extends BehatContext\MinkContext {
 
     // Check if the users exist, saving the inexistent users
     $inexistent_users = array();
-    $this->_visit( 'wp-admin/users.php' );
+    $this->visit( 'wp-admin/users.php' );
     $current_page = $session->getPage();
     foreach ($users as $username) {
       if (!$current_page->hasContent($username)) {
@@ -102,7 +102,7 @@ class WordPress_Context extends BehatContext\MinkContext {
     // The post type, if not post, will be appended.
     // Rather than a separate page per type, this is how WP works with forms for separate post types.
     $uri_suffix = $post_type !== 'post' ? '?post_type=' . $post_type : '';
-    $this->_visit( 'wp-admin/post-new.php' . $uri_suffix );
+    $this->visit( 'wp-admin/post-new.php' . $uri_suffix );
     $session = $this->session = $this->getSession();
     $current_page = $session->getPage();
 
@@ -130,7 +130,7 @@ class WordPress_Context extends BehatContext\MinkContext {
     $current_page->findButton($state_button)->click();
 
     // Check if the post exists now
-    $this->_visit( 'wp-admin/edit.php' . $uri_suffix );
+    $this->visit( 'wp-admin/edit.php' . $uri_suffix );
     assertTrue( $this->getSession()->getPage()->hasContent( $post_title ) );
   }
 
@@ -235,10 +235,6 @@ class WordPress_Context extends BehatContext\MinkContext {
     $this->searchForPost( $post_title );
     assertFalse( $current_page->hasContent($post_title) );
 
-  }
-
-  protected function _visit($path) {
-    $this->getSession()->visit( $this->base_url . $path );
   }
 
 }
