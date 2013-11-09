@@ -1,9 +1,12 @@
 <?php
 
 namespace WordPress\Mink\Context;
-use \Behat\Mink\Behat\Context as BehatContext; 
+use Behat\MinkExtension\Context\MinkContext as BehatContext;
 
-class WordPress_Context extends BehatContext\MinkContext {
+require_once 'PHPUnit/Autoload.php';
+require_once 'PHPUnit/Framework/Assert/Functions.php';
+
+class WordPress_Context extends BehatContext {
 
   protected $base_url;
   protected $role_map;
@@ -19,7 +22,7 @@ class WordPress_Context extends BehatContext\MinkContext {
     $this->base_url = $params['base_url'];
     $this->role_map = $params['role_map'];
   }
-  
+
   /**
    * Given a list of usernames (user_login field), checks for every username
    * if they exist. Returns a list of the users that do not exist.
@@ -48,7 +51,7 @@ class WordPress_Context extends BehatContext\MinkContext {
    * Creates a user for every username given (user_login field).
    * The inner values can also maps of the following type:
    *  array(
-   *    'username' => 
+   *    'username' =>
    *    'password' => (default: pass)
    *    'email' => (default: username@test.dev)
    *    'role' => (default: checks rolemap, or 'subscriber')
@@ -114,12 +117,12 @@ class WordPress_Context extends BehatContext\MinkContext {
     $session->executeScript( 'jQuery( "#content" ).val( ' . $content . ' )' );
 
     // Click the appropriate button depending on the given status
-    $state_button = 'Save Draft'; 
+    $state_button = 'Save Draft';
     switch ($status) {
       case 'draft':
         // We're good.
         break;
-      
+
       case 'publish':
       default:
         // Save as draft first
@@ -137,9 +140,9 @@ class WordPress_Context extends BehatContext\MinkContext {
   /**
    * Makes sure the current user is logged out, and then logs in with
    * the given username and password.
-   * 
+   *
    * @param string $username
-   * @param string $password 
+   * @param string $password
    * @author Maarten Jacobs
    **/
   protected function login($username, $password = 'pass') {
@@ -181,7 +184,7 @@ class WordPress_Context extends BehatContext\MinkContext {
    * @author Maarten Jacobs
    **/
   protected function searchForPost( $post_title, $do_assert = FALSE ) {
-    
+
     $current_page = $this->getSession()->getPage();
 
     // Search for the post
@@ -194,7 +197,7 @@ class WordPress_Context extends BehatContext\MinkContext {
       $current_page->findField( 'Search Posts' ) // Searching on value
                    ->click();
     }
-    
+
     // We don't stop tests even if the searchbox does not exist.
     // That would prevent the dev from knowing what the hell's going on.
     // Can I assert all the things?
@@ -208,7 +211,7 @@ class WordPress_Context extends BehatContext\MinkContext {
    * @Given /^I trash the "([^"]*)" titled "([^"]*)"$/
    */
   public function iTrashThePostTitled( $post_type, $post_title ) {
-    
+
     $session = $this->session = $this->getSession();
 
     // Visit the posts page
@@ -228,7 +231,7 @@ class WordPress_Context extends BehatContext\MinkContext {
     // This is tricky: the checkbox has a non-unique name (of course, that's the way to do it)
     // So we need to check the box in a different way
     // The easiest: jQuery
-    $session->executeScript( "jQuery( \"tr:contains('$post_title') :checkbox\" ).click()" ); 
+    $session->executeScript( "jQuery( \"tr:contains('$post_title') :checkbox\" ).click()" );
 
     // Trash it
     //  - Select the 'Move to Trash' option
